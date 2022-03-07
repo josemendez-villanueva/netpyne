@@ -10,12 +10,10 @@ MPI usage:
     mpiexec -n 4 nrniv -python -mpi init.py
 """
 
-import matplotlib; matplotlib.use('Agg')  # to avoid graphics error in servers
 
 from netpyne import sim
-from cfg import cfg
-from netParams import netParams
 
+netParams, cfg = sim.loadFromIndex('index.npjson', method='python')
 print("Starting sim ...")
 sim.createSimulateAnalyze(netParams, cfg)
 

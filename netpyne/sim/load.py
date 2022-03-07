@@ -451,6 +451,57 @@ def loadAll(filename, data=None, instantiate=True, createNEURONObj=True):
     loadNet(filename, data=data, instantiate=instantiate, compactConnFormat=connFormat)
     loadSimData(filename, data=data)
 
+def loadFromIndex(index, method='python'):
+
+    import __main__
+    import json, os, importlib, types
+    from .. import sim
+
+    print(f'Loading index file {index} ... ')
+    with open(index, 'r') as fileObj:
+        indexData = json.load(fileObj)
+
+        # compile .mod files
+        modFolder = indexData['mod_folder']
+        os.system('nrnivmodl ' + modFolder)
+
+        if method == 'python':
+            simConfigFile = indexData['simConfig_python']
+            print(f'\n    Loading simConfig: {simConfigFile} ... ')
+            loader = importlib.machinery.SourceFileLoader(os.path.basename(simConfigFile).split('.')[0], simConfigFile)
+            cfgModule = types.ModuleType(loader.name)
+            loader.exec_module(cfgModule)
+            cfg = cfgModule.cfg
+            __main__.cfg = cfg
+
+            netParamsFile = indexData['netParams_python']
+            print(f'\n    Loading netParams: {netParamsFile} ... ')
+            loader = importlib.machinery.SourceFileLoader(os.path.basename(netParamsFile).split('.')[0], netParamsFile)
+            netParamsModule = types.ModuleType(loader.name)
+            loader.exec_module(netParamsModule)
+            netParams = netParamsModule.netParams
+
+        elif method == 'json':
+            configFile = indexData['simConfig_json']
+            configVar = indexData['simConfig_variable']
+            data = _loadFile(configFile)
+
+            sim.setSimCfg(data[configVar])
+            cfg = sim.cfg
+
+            paramsFile = indexData['netParams_json']
+            paramsVar = indexData['netParams_variable']
+            if paramsFile != configFile:
+                data = _loadFile(paramsFile)
+
+            setup.setNetParams(data[paramsVar])
+            netParams = sim.net.params
+
+        else:
+            print("Unsupported method. Use `python` or `json`")
+
+        return netParams, cfg
+
 
 #------------------------------------------------------------------------------
 # Convert compact (list-based) to long (dict-based) conn format
