@@ -13,7 +13,7 @@ MPI usage:
 
 from netpyne import sim
 
-netParams, cfg = sim.loadFromIndex('index.npjson', method='python')
+netParams, cfg = sim.loadFromIndexFile('index.npjson')
 print("Starting sim ...")
 sim.createSimulateAnalyze(netParams, cfg)
 
